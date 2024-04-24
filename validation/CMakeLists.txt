@@ -65,6 +65,7 @@ set(
         ../src/include/ParticleSolver/ParticleSolverCPUSequential/ParticleSolverCPUSequential.cpp
         ../src/include/ParticleSystemInitializer/ParticleSystemLagrange/ParticleSystemLagrange.cpp
         ../src/include/ParticleSolver/ParticleSolverCPUGrid/ParticleSolverCPUGrid.cpp
+        ../src/include/ParticleSolver/ParticleSolverCPUFluid/ParticleSolverCPUFluid.cpp
         ../src/include/Grid/GridCPU.cpp
         ../src/include/Bucket/Bucket.cpp
         tests/abstract/CPUTest/CPUTest.cpp
@@ -100,6 +101,7 @@ target_include_directories(
         ../src/include/ParticleSolver/ParticleSolverCPUParallel/
         ../src/include/ParticleSolver/ParticleSolverCPUSequential/
         ../src/include/ParticleSolver/ParticleSolverCPUGrid/
+        ../src/include/ParticleSolver/ParticleSolverCPUFluid/
         ../src/include/ParticleSystemInitializer/interface/
         ../src/include/ParticleSystemInitializer/ParticleSystemCubeInitializer/
         ../src/include/ParticleSystemInitializer/ParticleSystemLagrange/

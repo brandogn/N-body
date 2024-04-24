@@ -13,6 +13,7 @@
 #include "ParticleSolverCPUParallel.h"
 #include "ParticleSolverGPU.h"
 #include "ParticleSolverCPUGrid.h"
+#include "ParticleSolverCPUFluid.h"
 
 
 #include "WindowInputManager.h"
@@ -87,6 +88,9 @@ int main(int argc, char *argv[])
             break;
         case Version::GRID_CPU:
             particleSimulation = new ParticleSimulation(particleSystemInitializer, new ParticleSolverCPUGrid(new GridCPU(worldDimensions, args.getNumParticles(), 4), args.getTimeStep(), args.getSquaredSoftening()), worldDimensions, windowDim, args.getSaveFileName());
+            break;
+        case Version::FLUID_CPU:
+            particleSimulation = new ParticleSimulation(particleSystemInitializer,  new ParticleSolverCPUFluid(args.getTimeStep(), args.getSquaredSoftening()), worldDimensions, windowDim, args.getSaveFileName());
             break;
     }
     WindowInputManager windowInputManager(&window, &renderLoop, particleSimulation);
