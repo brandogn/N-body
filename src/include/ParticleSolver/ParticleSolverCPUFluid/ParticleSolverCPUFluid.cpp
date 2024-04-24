@@ -1,6 +1,6 @@
-
 #include "ParticleSolverCPUFluid.h"
 #include <glm/gtx/norm.hpp>
+#include <cmath>
 
 ParticleSolverCPUFluid::ParticleSolverCPUFluid(float stepSize,
                                                float squaredSoft)
@@ -8,6 +8,7 @@ ParticleSolverCPUFluid::ParticleSolverCPUFluid(float stepSize,
   this->squaredSoftening = squaredSoft;
   this->timeStep = stepSize;
   this->G = 1.0f;
+  this->smoothingRadius = 0.2f;
 }
 
 void ParticleSolverCPUFluid::updateParticlePositions(
@@ -20,7 +21,18 @@ void ParticleSolverCPUFluid::updateParticlePositions(
   }
 }
 
-void ParticleSolverCPUFluid::computeDensityMap(ParticleSystem *particles) {}
+float ParticleSolverCPUFluid::smoothingKernelDensity(float distance, float radius) {
+  if (distance < radius) {
+    float scale = 315 / (64 * 3.14159265358979323846 * std::pow(std::abs(radius), 9));
+    float v = radius * radius - distance - distance;
+    return v * v * v * scale;
+  }
+  return 0;
+}
+
+void ParticleSolverCPUFluid::computeDensityMap(ParticleSystem *particles) {
+
+}
 
 void ParticleSolverCPUFluid::computeGravityForce(
     ParticleSystem *particles, const unsigned int particleId) {

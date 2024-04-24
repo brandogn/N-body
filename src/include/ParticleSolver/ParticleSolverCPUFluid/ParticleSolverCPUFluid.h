@@ -16,6 +16,8 @@ protected:
   float G;
   float timeStep;
   // density_map
+  float smoothingRadius;
+  float smoothingKernelDensity(float distance, float radius);
   void computeDensityMap(ParticleSystem *particles);
   void computeGravityForce(ParticleSystem *particles,
                            const unsigned int particleId);
