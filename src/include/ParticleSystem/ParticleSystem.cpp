@@ -7,12 +7,14 @@ ParticleSystem::ParticleSystem(std::vector<Particle> &particles) {
     this->positions = new glm::vec4[this->numParticles]();
     this->masses = new glm::vec4[this->numParticles]();
     this->forces = new glm::vec4[this->numParticles]();
+    this->densities = new glm::vec4[this->numParticles]();
 
     for (int i = 0; i < this->numParticles; i++) {
         this->velocities[i] = particles[i].velocity;
         this->accelerations[i] = particles[i].acceleration;
         this->positions[i] = particles[i].position;
         this->masses[i] = glm::vec4(particles[i].mass, 0, 0, 0);
+        this->densities[i] = glm::vec4(0.f);
         this->forces[i] = glm::vec4(0.f);
     }
 }
@@ -23,6 +25,7 @@ ParticleSystem::ParticleSystem(ParticleSystem * other) {
     this->accelerations = new glm::vec4[this->numParticles]();
     this->positions = new glm::vec4[this->numParticles]();
     this->masses = new glm::vec4[this->numParticles]();
+    this->densities = new glm::vec4[this->numParticles]();
     this->forces = new glm::vec4[this->numParticles]();
 
     for (int i = 0; i < this->numParticles; i++) {
@@ -30,6 +33,7 @@ ParticleSystem::ParticleSystem(ParticleSystem * other) {
         this->accelerations[i] = other->getAccelerations()[i];
         this->positions[i] = other->positions[i];
         this->masses[i] = other->masses[i];
+        this->densities[i] = other->densities[i];
         this->forces[i] = other->forces[i];
     }
 }
@@ -80,6 +84,10 @@ glm::vec4* ParticleSystem::getVelocities() {
 
 glm::vec4* ParticleSystem::getAccelerations() {
     return this->accelerations;
+}
+
+glm::vec4* ParticleSystem::getDensities() {
+    return this->densities;
 }
 
 glm::vec4* ParticleSystem::getForces() {
