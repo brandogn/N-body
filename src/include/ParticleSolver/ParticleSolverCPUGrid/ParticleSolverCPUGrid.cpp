@@ -42,7 +42,6 @@ ParticleSolverCPUGrid::computeGravityForce(ParticleSystem *particles, const unsi
     }
 
     // Compute the forces with other buckets
-
     Bucket *otherBucket = nullptr;
     for(size_t bucketId = 0; bucketId < this->gridCpu->getTotalBuckets(); bucketId++){
         otherBucket = this->gridCpu->getBucketById(bucketId);
