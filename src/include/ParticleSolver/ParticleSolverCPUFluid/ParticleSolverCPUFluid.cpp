@@ -18,6 +18,7 @@ void ParticleSolverCPUFluid::updateParticlePositions(
 
   #pragma omp parallel for schedule(static) shared(particles)
   for(size_t i =  0; i < particles->size(); i++){
+    this->computeDensityMap(particles, i);
     this->computeGravityForce(particles, i);
   }
 
@@ -36,8 +37,22 @@ float ParticleSolverCPUFluid::smoothingKernelDensity(float distance, float radiu
   return 0;
 }
 
-void ParticleSolverCPUFluid::computeDensityMap(ParticleSystem *particles) {
+void ParticleSolverCPUFluid::computeDensityMap(ParticleSystem *particles, const unsigned int particleID) {
+  glm::vec4 particlePosition = particles->getPositions()[particleID];
+  
+  // Get the bucket where the particle is located
+  Bucket* bucket = this->grid->getBucketByPosition(particlePosition);
 
+  // Compute the density contribution from neighboring particles in the bucket for each particle 
+  glm::vec4 density (0.f);
+  for (size_t j = 0; j < bucket->getNumParticles(); j++) {
+    const unsigned int otherParticleId = bucket->getParticleId(j);
+    const glm::vec4 vector_i_j = particles->getPositions()[otherParticleId] - particlePosition;
+    const float distance_i_j = std::pow(glm::length2(vector_i_j) + this->squaredSoftening, 1.5);
+    density += smoothingKernelDensity(distance_i_j, smoothingRadius);
+  }
+
+  particles->getDensities()[particleID] = density;
 }
 
 void ParticleSolverCPUFluid::computeGravityForce(

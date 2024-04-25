@@ -21,7 +21,8 @@ protected:
   // density_map
   float smoothingRadius;
   float smoothingKernelDensity(float distance, float radius);
-  void computeDensityMap(ParticleSystem *particles);
+  void computeDensityMap(ParticleSystem *particles,
+                           const unsigned int particleId);
   void computeGravityForce(ParticleSystem *particles,
                            const unsigned int particleId);
   void computeFluidForce(ParticleSystem *particles,
