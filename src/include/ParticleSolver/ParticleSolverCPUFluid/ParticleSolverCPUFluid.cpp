@@ -14,10 +14,15 @@ ParticleSolverCPUFluid::ParticleSolverCPUFluid(GridCPU *grid, float stepSize,
 
 void ParticleSolverCPUFluid::updateParticlePositions(
     ParticleSystem *particles) {
-  for (size_t i = 0; i < particles->size(); i++) {
+  this->grid->updateGrid(particles);
+
+  #pragma omp parallel for schedule(static) shared(particles)
+  for(size_t i =  0; i < particles->size(); i++){
     this->computeGravityForce(particles, i);
   }
-  for (size_t i = 0; i < particles->size(); i++) {
+
+  #pragma omp parallel for schedule(static) shared(particles)
+  for(size_t i =  0; i<particles->size(); i++){
     particles->updateParticlePosition(i, this->timeStep);
   }
 }
