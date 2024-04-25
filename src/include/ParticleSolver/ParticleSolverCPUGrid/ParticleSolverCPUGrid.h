@@ -1,4 +1,3 @@
-
 #include "ParticleSolver.h"
 #include "GridCPU.h"
 
@@ -19,7 +18,6 @@ protected:
     void computeGravityForce(ParticleSystem *particles, const unsigned int particleId);
     float G;
     GridCPU *gridCpu;
-
 };
 
 

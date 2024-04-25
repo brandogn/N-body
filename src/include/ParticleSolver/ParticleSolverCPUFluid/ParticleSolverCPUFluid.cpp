@@ -2,13 +2,14 @@
 #include <glm/gtx/norm.hpp>
 #include <cmath>
 
-ParticleSolverCPUFluid::ParticleSolverCPUFluid(float stepSize,
+ParticleSolverCPUFluid::ParticleSolverCPUFluid(GridCPU *grid, float stepSize,
                                                float squaredSoft)
     : ParticleSolver() {
   this->squaredSoftening = squaredSoft;
   this->timeStep = stepSize;
   this->G = 1.0f;
   this->smoothingRadius = 0.2f;
+  this->grid = grid;
 }
 
 void ParticleSolverCPUFluid::updateParticlePositions(
@@ -38,22 +39,42 @@ void ParticleSolverCPUFluid::computeGravityForce(
     ParticleSystem *particles, const unsigned int particleId) {
 
   glm::vec4 particlePosition = particles->getPositions()[particleId];
+  glm::vec4 totalForce (0.f);
 
-  glm::vec4 totalForce(0.f);
+  // Get the bucket where the particle is located
+  Bucket* bucket = this->grid->getBucketByPosition(particlePosition);
 
-  // for(size_t j = 0; j < particles->size(); j++){
-  //     const glm::vec4 vector_i_j = particles->getPositions()[j] -
-  //     particlePosition; const float distance_i_j =
-  //     std::pow(glm::length2(vector_i_j) + this->squaredSoftening, 1.5);
-  //     totalForce += ((G * particles->getMasses()[j].x) / distance_i_j) *
-  //     vector_i_j;
-  // }
+  // Compute forces inside the bucket
+  for(size_t j = 0; j < bucket->getNumParticles(); j++){
+    const unsigned int otherParticleId = bucket->getParticleId(j);
+    const glm::vec4 vector_i_j = particles->getPositions()[otherParticleId] - particlePosition;
+    const float distance_i_j = std::pow(glm::length2(vector_i_j) + this->squaredSoftening, 1.5);
+    totalForce += ((G * particles->getMasses()[otherParticleId].x) / distance_i_j) * vector_i_j;
+  }
 
-  totalForce = particles->getVelocities()[particleId] * -1.0f;
+  // Compute the forces with other buckets
+
+  Bucket *otherBucket = nullptr;
+  for(size_t bucketId = 0; bucketId < this->grid->getTotalBuckets(); bucketId++){
+    otherBucket = this->grid->getBucketById(bucketId);
+    if (bucket->getBucketId() != otherBucket->getBucketId()){
+      const glm::vec4 centerOfMass = otherBucket->getCenterOfMass();
+      const float mass = centerOfMass.w;
+      const glm::vec4 centerOfMassPosition = glm::vec4(centerOfMass.x, centerOfMass.y, centerOfMass.z, 0.f);
+      const glm::vec4 vector_i_j = centerOfMassPosition - particlePosition;
+      const float distance_i_j = std::pow(glm::length2(vector_i_j) + this->squaredSoftening, 1.5);
+      totalForce += ((G * mass) / distance_i_j) * vector_i_j;
+    }
+  }
+
   particles->getForces()[particleId] = totalForce;
 }
 
 bool ParticleSolverCPUFluid::usesGPU() { return false; }
+
+ParticleSolverCPUFluid::~ParticleSolverCPUFluid() noexcept {
+    delete this->grid;
+}
 
 float ParticleSolverCPUFluid::getSquaredSoftening() {
   return this->squaredSoftening;
