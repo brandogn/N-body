@@ -28,11 +28,38 @@ void ParticleSolverCPUFluid::updateParticlePositions(
   }
 }
 
-float ParticleSolverCPUFluid::smoothingKernelDensity(float distance, float radius) {
+float ParticleSolverCPUFluid::densityKernel(float distance, float radius) {
   if (distance < radius) {
-    float scale = 315 / (64 * 3.14159265358979323846 * std::pow(std::abs(radius), 9));
-    float v = radius * radius - distance - distance;
+    float scale = 15 / (2 * PI * std::pow(std::abs(radius), 5));
+    float v = radius - distance;
+    return v * v * scale;
+  }
+  return 0;
+}
+
+float ParticleSolverCPUFluid::densityDerivative(float distance, float radius) {
+  if (distance <= radius) {
+    float scale = 15 / (PI * std::pow(std::abs(radius), 5));
+    float v = radius - distance;
+    return -v * scale;
+  }
+  return 0;
+}
+
+float ParticleSolverCPUFluid::nearDensityKernel(float distance, float radius) {
+  if (distance < radius) {
+    float scale = 15 / (PI * std::pow(std::abs(radius), 6));
+    float v = radius - distance;
     return v * v * v * scale;
+  }
+  return 0;
+}
+
+float ParticleSolverCPUFluid::nearDensityDerivative(float distance, float radius) {
+  if (distance <= radius) {
+    float scale = 45 / (PI * std::pow(std::abs(radius), 6));
+    float v = radius - distance;
+    return -v * v * scale;
   }
   return 0;
 }
@@ -44,16 +71,20 @@ void ParticleSolverCPUFluid::computeDensityMap(ParticleSystem *particles, const 
   Bucket* bucket = this->grid->getBucketByPosition(particlePosition);
 
   // Compute the density contribution from neighboring particles in the bucket for each particle 
-  glm::vec4 density (0.f);
+  float density = 0.f;
+  float near_density = 0.f;
   for (size_t j = 0; j < bucket->getNumParticles(); j++) {
     const unsigned int otherParticleId = bucket->getParticleId(j);
     const glm::vec4 vector_i_j = particles->getPositions()[otherParticleId] - particlePosition;
     const float distance_i_j = std::pow(glm::length2(vector_i_j) + this->squaredSoftening, 1.5);
-    density += smoothingKernelDensity(distance_i_j, smoothingRadius);
+    density += densityKernel(distance_i_j, smoothingRadius);
+    near_density += nearDensityKernel(distance_i_j, smoothingRadius);
   }
 
-  particles->getDensities()[particleID] = density;
+  particles->getDensities()[particleID] = glm::vec4(density, near_density, 0.f, 0.f);
 }
+
+
 
 void ParticleSolverCPUFluid::computeGravityForce(
     ParticleSystem *particles, const unsigned int particleId) {

@@ -5,6 +5,9 @@
 #ifndef N_BODY_PARTICLESOLVERCPUFLUID_H
 #define N_BODY_PARTICLESOLVERCPUFLUID_H
 
+#define PI 3.14159265358979323846
+
+
 class ParticleSolverCPUFluid : public ParticleSolver {
 public:
   ParticleSolverCPUFluid(GridCPU *grid, float timeStep, float squaredSoftening);
@@ -20,7 +23,12 @@ protected:
   GridCPU *grid;
   // density_map
   float smoothingRadius;
-  float smoothingKernelDensity(float distance, float radius);
+
+  float densityKernel(float distance, float radius);
+  float densityDerivative(float distance, float radius);
+  float nearDensityKernel(float distance, float radius);
+  float nearDensityDerivative(float distance, float radius);
+
   void computeDensityMap(ParticleSystem *particles,
                            const unsigned int particleId);
   void computeGravityForce(ParticleSystem *particles,
