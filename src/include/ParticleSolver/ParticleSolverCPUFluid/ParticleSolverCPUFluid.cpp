@@ -8,7 +8,10 @@ ParticleSolverCPUFluid::ParticleSolverCPUFluid(GridCPU *grid, float stepSize,
   this->squaredSoftening = squaredSoft;
   this->timeStep = stepSize;
   this->G = 1.0f;
-  this->smoothingRadius = 0.2f;
+  this->smoothingRadius = 0.35f;
+  this->targetDensity = 6.f;
+  this->pressureMultiplier = 30.f;
+  this->nearPressureMultiplier = 1.95f;
   this->grid = grid;
 }
 
@@ -19,6 +22,7 @@ void ParticleSolverCPUFluid::updateParticlePositions(
   #pragma omp parallel for schedule(static) shared(particles)
   for(size_t i =  0; i < particles->size(); i++){
     this->computeDensityMap(particles, i);
+    this->computePressureForce(particles, i);
     this->computeGravityForce(particles, i);
   }
 
@@ -64,13 +68,21 @@ float ParticleSolverCPUFluid::nearDensityDerivative(float distance, float radius
   return 0;
 }
 
+float ParticleSolverCPUFluid::pressureFromDensity(float density) {
+  return (density - targetDensity) * pressureMultiplier;
+}
+
+float ParticleSolverCPUFluid::nearPressureFromDensity(float nearDensity) {
+  return nearDensity * nearPressureMultiplier;
+}
+
 void ParticleSolverCPUFluid::computeDensityMap(ParticleSystem *particles, const unsigned int particleID) {
   glm::vec4 particlePosition = particles->getPositions()[particleID];
   
   // Get the bucket where the particle is located
   Bucket* bucket = this->grid->getBucketByPosition(particlePosition);
 
-  // Compute the density contribution from neighboring particles in the bucket for each particle 
+  // Compute the density contribution from neighboring particles 
   float density = 0.f;
   float near_density = 0.f;
   for (size_t j = 0; j < bucket->getNumParticles(); j++) {
@@ -84,7 +96,44 @@ void ParticleSolverCPUFluid::computeDensityMap(ParticleSystem *particles, const 
   particles->getDensities()[particleID] = glm::vec4(density, near_density, 0.f, 0.f);
 }
 
+void ParticleSolverCPUFluid::computePressureForce(ParticleSystem *particles, const unsigned int particleID) {
+  glm::vec4 particlePosition = particles->getPositions()[particleID];
+  
+  // Get the bucket where the particle is located
+  Bucket* bucket = this->grid->getBucketByPosition(particlePosition);
 
+  // Compute the pressure forces exerted by neighboring particles
+  const float density = particles->getDensities()[particleID].x;
+  const float nearDensity = particles->getDensities()[particleID].y;
+  const float pressure = pressureFromDensity(density);
+  const float nearPressure = nearPressureFromDensity(nearDensity);
+  glm::vec4 pressureForce (0.f);
+
+  for (size_t j = 0; j < bucket->getNumParticles(); j++) {
+    const unsigned int otherParticleId = bucket->getParticleId(j);
+    if (otherParticleId != particleID) {
+      glm::vec4 vector_i_j = particles->getPositions()[otherParticleId] - particlePosition;
+      const float distance_i_j = std::pow(glm::length2(vector_i_j) + this->squaredSoftening, 1.5);
+
+      const float densityNeighbor = particles->getDensities()[otherParticleId].x;
+      const float nearDensityNeighbor = particles->getDensities()[otherParticleId].y;
+      const float neighborPressure = pressureFromDensity(densityNeighbor);
+      const float neighborNearPressure = nearPressureFromDensity(nearDensityNeighbor);
+
+      const float sharedPressure = (pressure + neighborPressure) / 2;
+      const float sharedNearPressure = (nearPressure + neighborNearPressure) / 2;
+
+      if (distance_i_j <= 0) {
+        vector_i_j = glm::vec4(0.f, 1.f, 0.f, 0.f);
+      }
+
+      pressureForce += vector_i_j * densityDerivative(distance_i_j, smoothingRadius) * sharedPressure / densityNeighbor;
+      pressureForce += vector_i_j * nearDensityDerivative(distance_i_j, smoothingRadius) * sharedNearPressure / nearDensityNeighbor;
+    }
+  }
+
+  particles->getForces()[particleID] += pressureForce;
+}
 
 void ParticleSolverCPUFluid::computeGravityForce(
     ParticleSystem *particles, const unsigned int particleId) {
