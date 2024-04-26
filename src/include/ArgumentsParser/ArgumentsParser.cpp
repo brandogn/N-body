@@ -45,6 +45,10 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[]) {
     std::cout << "Squared softening: \n";
     std::cout << "-s (Any positive decimal number)\n\n";
 
+    std::cout << "FLUIDS: \n";
+    std::cout << "-i 7 (Pressure Test initialization) \n";
+    std::cout << "-v 6 (CPU Grid with Fluid dynamics added) \n";
+
     std::cout << "============================================ \n\n";
 
     for (int i = 1; i < argc; i++) {
@@ -71,7 +75,7 @@ ArgumentsParser::ArgumentsParser(int argc, char *argv[]) {
         } else if ((arg == "-init" || arg == "-i") && i + 1 < argc) {
             int value = std::stoi(argv[i + 1]);
             if (value >= static_cast<int>(InitializationType::CUBE) &&
-                value <= static_cast<int>(InitializationType::CUBE_SURFACE)) {
+                value <= static_cast<int>(InitializationType::PRESSURE)) {
                 this->init = static_cast<InitializationType>(value);
             } else {
                 std::cerr << "Invalid initialization type\n";

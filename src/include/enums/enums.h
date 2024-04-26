@@ -7,7 +7,8 @@ enum InitializationType{
     SPHERE = 4,
     BALL = 5,
     CUBE_SURFACE = 6,
-    SYSTEM_FILE = 7
+    PRESSURE = 7,
+    SYSTEM_FILE = 8
 };
 
 enum Version {

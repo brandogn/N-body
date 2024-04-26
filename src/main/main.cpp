@@ -5,6 +5,7 @@
 #include "ParticleSystemLagrange.h"
 #include "ParticleSystemSphere.h"
 #include "ParticleSystemBall.h"
+#include "ParticleSystemPressureTest.h"
 #include "ParticleSystemCubeSurface.h"
 #include "ParticleSystemFile.h"
 
@@ -58,6 +59,9 @@ int main(int argc, char *argv[])
             break;
         case InitializationType::SYSTEM_FILE:
             particleSystemInitializer = new ParticleSystemFile(filePath);
+            break;
+        case InitializationType::PRESSURE:
+            particleSystemInitializer = new ParticleSystemPressureTest(args.getNumParticles());
             break;
         default:
             exit(EXIT_FAILURE);
