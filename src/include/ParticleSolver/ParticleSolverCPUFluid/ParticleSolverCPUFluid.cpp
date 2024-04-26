@@ -8,8 +8,8 @@ ParticleSolverCPUFluid::ParticleSolverCPUFluid(GridCPU *grid, float stepSize,
   this->squaredSoftening = squaredSoft;
   this->timeStep = stepSize;
   this->G = 1.0f;
-  this->smoothingRadius = 0.35f;
-  this->targetDensity = 6.f;
+  this->smoothingRadius = 0.1f;
+  this->targetDensity = 20.f;
   this->pressureMultiplier = 30.f;
   this->nearPressureMultiplier = 1.95f;
   this->grid = grid;
@@ -22,8 +22,18 @@ void ParticleSolverCPUFluid::updateParticlePositions(
   #pragma omp parallel for schedule(static) shared(particles)
   for(size_t i =  0; i < particles->size(); i++){
     this->computeDensityMap(particles, i);
+  }
+
+  #pragma omp parallel for schedule(static) shared(particles)
+  for(size_t i =  0; i < particles->size(); i++){
+    particles->getForces()[i] = glm::vec4(0.f);
     this->computePressureForce(particles, i);
     this->computeGravityForce(particles, i);
+    // std::cout << "DEBUG: {" 
+    //   << particles->getForces()[i].x 
+    //   << particles->getForces()[i].y 
+    //   << particles->getForces()[i].z 
+    //   << "} \n";
   }
 
   #pragma omp parallel for schedule(static) shared(particles)
@@ -167,7 +177,7 @@ void ParticleSolverCPUFluid::computeGravityForce(
     }
   }
 
-  particles->getForces()[particleId] = totalForce;
+  particles->getForces()[particleId] += totalForce;
 }
 
 bool ParticleSolverCPUFluid::usesGPU() { return false; }
