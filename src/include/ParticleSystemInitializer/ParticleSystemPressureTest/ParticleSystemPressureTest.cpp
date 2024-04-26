@@ -9,7 +9,7 @@ ParticleSystem* ParticleSystemPressureTest::generateParticles(glm::vec3 worldDim
     Particle* particles = new Particle[this->totalParticles];
 
     std::mt19937 mt(std::chrono::system_clock::now().time_since_epoch().count());
-    std::uniform_real_distribution<float> randDist(0, 0.1f);
+    std::uniform_real_distribution<float> randDist(2.49, 2.51f);
     std::uniform_real_distribution<float> mass(0.8, 1.3);
 
 
