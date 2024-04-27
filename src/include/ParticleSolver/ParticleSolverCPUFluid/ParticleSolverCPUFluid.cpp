@@ -1,6 +1,7 @@
 #include "ParticleSolverCPUFluid.h"
 #include <glm/gtx/norm.hpp>
 #include <cmath>
+#include <iostream>
 
 ParticleSolverCPUFluid::ParticleSolverCPUFluid(GridCPU *grid, float stepSize,
                                                float squaredSoft)
@@ -97,8 +98,7 @@ void ParticleSolverCPUFluid::computeDensityMap(ParticleSystem *particles, const 
   float near_density = 0.f;
   for (size_t j = 0; j < bucket->getNumParticles(); j++) {
     const unsigned int otherParticleId = bucket->getParticleId(j);
-    const glm::vec4 vector_i_j = particles->getPositions()[otherParticleId] - particlePosition;
-    const float distance_i_j = std::pow(glm::length2(vector_i_j) + this->squaredSoftening, 1.5);
+    const float distance_i_j = glm::distance(particles->getPositions()[otherParticleId], particlePosition);
     density += densityKernel(distance_i_j, smoothingRadius);
     near_density += nearDensityKernel(distance_i_j, smoothingRadius);
   }
@@ -123,7 +123,7 @@ void ParticleSolverCPUFluid::computePressureForce(ParticleSystem *particles, con
     const unsigned int otherParticleId = bucket->getParticleId(j);
     if (otherParticleId != particleID) {
       glm::vec4 vector_i_j = particles->getPositions()[otherParticleId] - particlePosition;
-      const float distance_i_j = std::pow(glm::length2(vector_i_j) + this->squaredSoftening, 1.5);
+      const float distance_i_j = glm::distance(particles->getPositions()[otherParticleId], particlePosition);
 
       const float densityNeighbor = particles->getDensities()[otherParticleId].x;
       const float nearDensityNeighbor = particles->getDensities()[otherParticleId].y;
