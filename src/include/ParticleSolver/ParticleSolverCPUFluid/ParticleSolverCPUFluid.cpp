@@ -13,6 +13,7 @@ ParticleSolverCPUFluid::ParticleSolverCPUFluid(GridCPU *grid, float stepSize,
   this->targetDensity = 20.f;
   this->pressureMultiplier = 30.f;
   this->nearPressureMultiplier = 1.95f;
+  this->viscosityStrength = 0.f;
   this->grid = grid;
 }
 
@@ -27,8 +28,8 @@ void ParticleSolverCPUFluid::updateParticlePositions(
 
   #pragma omp parallel for schedule(static) shared(particles)
   for(size_t i =  0; i < particles->size(); i++){
-    particles->getForces()[i] = glm::vec4(0.f);
     this->computePressureForce(particles, i);
+    this->computeViscosityForce(particles, i);
     this->computeGravityForce(particles, i);
     // std::cout << "DEBUG: {" 
     //   << particles->getForces()[i].x 
@@ -63,8 +64,10 @@ void ParticleSolverCPUFluid::computeDensityMap(ParticleSystem *particles, const 
   for (size_t j = 0; j < bucket->getNumParticles(); j++) {
     const unsigned int otherParticleId = bucket->getParticleId(j);
     const float distance_i_j = glm::distance(particles->getPositions()[otherParticleId], particlePosition);
-    density += FluidMath::densityKernel(distance_i_j, smoothingRadius);
-    near_density += FluidMath::nearDensityKernel(distance_i_j, smoothingRadius);
+    if (distance_i_j <= smoothingRadius) {
+      density += FluidMath::densityKernel(distance_i_j, smoothingRadius);
+      near_density += FluidMath::nearDensityKernel(distance_i_j, smoothingRadius);
+    }
   }
 
   particles->getDensities()[particleID] = glm::vec4(density, near_density, 0.f, 0.f);
@@ -89,24 +92,51 @@ void ParticleSolverCPUFluid::computePressureForce(ParticleSystem *particles, con
       glm::vec4 vector_i_j = particles->getPositions()[otherParticleId] - particlePosition;
       const float distance_i_j = glm::distance(particles->getPositions()[otherParticleId], particlePosition);
 
-      const float densityNeighbor = particles->getDensities()[otherParticleId].x;
-      const float nearDensityNeighbor = particles->getDensities()[otherParticleId].y;
-      const float neighborPressure = pressureFromDensity(densityNeighbor);
-      const float neighborNearPressure = nearPressureFromDensity(nearDensityNeighbor);
+      if (distance_i_j < smoothingRadius) {
+        const float densityNeighbor = particles->getDensities()[otherParticleId].x;
+        const float nearDensityNeighbor = particles->getDensities()[otherParticleId].y;
+        const float neighborPressure = pressureFromDensity(densityNeighbor);
+        const float neighborNearPressure = nearPressureFromDensity(nearDensityNeighbor);
 
-      const float sharedPressure = (pressure + neighborPressure) / 2;
-      const float sharedNearPressure = (nearPressure + neighborNearPressure) / 2;
+        const float sharedPressure = (pressure + neighborPressure) / 2;
+        const float sharedNearPressure = (nearPressure + neighborNearPressure) / 2;
 
-      if (distance_i_j <= 0) {
-        vector_i_j = glm::vec4(0.f, 1.f, 0.f, 0.f);
+        if (distance_i_j <= 0) {
+          vector_i_j = glm::vec4(0.f, 1.f, 0.f, 0.f);
+        }
+
+        pressureForce += vector_i_j * FluidMath::densityDerivative(distance_i_j, smoothingRadius) * sharedPressure / densityNeighbor;
+        pressureForce += vector_i_j * FluidMath::nearDensityDerivative(distance_i_j, smoothingRadius) * sharedNearPressure / nearDensityNeighbor;
       }
-
-      pressureForce += vector_i_j * FluidMath::densityDerivative(distance_i_j, smoothingRadius) * sharedPressure / densityNeighbor;
-      pressureForce += vector_i_j * FluidMath::nearDensityDerivative(distance_i_j, smoothingRadius) * sharedNearPressure / nearDensityNeighbor;
     }
   }
 
-  particles->getForces()[particleID] += pressureForce;
+  glm::vec4 acceleration = pressureForce / density;
+  particles->getVelocities()[particleID] += acceleration * this->timeStep;
+}
+
+void ParticleSolverCPUFluid::computeViscosityForce(ParticleSystem *particles, const unsigned int particleId) {
+  glm::vec4 particlePosition = particles->getPositions()[particleId];
+  glm::vec4 viscosityForce (0.f);
+
+  glm::vec4 particleVelocity = particles->getVelocities()[particleId];
+  
+  // Get the bucket where the particle is located
+  Bucket* bucket = this->grid->getBucketByPosition(particlePosition);
+
+  for (size_t j = 0; j < bucket->getNumParticles(); j++) {
+    const unsigned int otherParticleId = bucket->getParticleId(j);
+    if (otherParticleId != particleId) {
+      glm::vec4 vector_i_j = particles->getPositions()[otherParticleId] - particlePosition;
+      const float distance_i_j = glm::distance(particles->getPositions()[otherParticleId], particlePosition);
+
+      if (distance_i_j < smoothingRadius) {
+        const glm::vec4 neighborVelocity = particles->getVelocities()[otherParticleId];
+        viscosityForce += (neighborVelocity - particleVelocity) * FluidMath::viscosityKernel(distance_i_j, smoothingRadius);
+      }
+    }
+  }
+  particles->getVelocities()[particleId] += viscosityForce * viscosityStrength * this->timeStep;
 }
 
 void ParticleSolverCPUFluid::computeGravityForce(

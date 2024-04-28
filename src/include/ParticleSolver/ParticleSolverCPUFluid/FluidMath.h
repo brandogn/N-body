@@ -37,5 +37,12 @@ class FluidMath {
             }
             return 0;
         }
-        static float viscosityKernel(float distance, float radius);
+        static float viscosityKernel(float distance, float radius) {
+            if (distance < radius) {
+                float scale = 315 / (64 * PI * std::pow(std::abs(radius), 9));
+                float v = radius * radius - distance * distance;
+                return v * v * v;
+            }
+            return 0;
+        }
 };

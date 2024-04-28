@@ -27,17 +27,16 @@ protected:
   float targetDensity;
   float pressureMultiplier;
   float nearPressureMultiplier;
+  float viscosityStrength;
 
-  float densityKernel(float distance, float radius);
-  float densityDerivative(float distance, float radius);
-  float nearDensityKernel(float distance, float radius);
-  float nearDensityDerivative(float distance, float radius);
   float pressureFromDensity(float density);
   float nearPressureFromDensity(float density);
 
   void computeDensityMap(ParticleSystem *particles,
                            const unsigned int particleId);
   void computePressureForce(ParticleSystem *particles,
+                           const unsigned int particleId);
+  void computeViscosityForce(ParticleSystem *particles, 
                            const unsigned int particleId);
   void computeGravityForce(ParticleSystem *particles,
                            const unsigned int particleId);
