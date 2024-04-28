@@ -43,42 +43,6 @@ void ParticleSolverCPUFluid::updateParticlePositions(
   }
 }
 
-float ParticleSolverCPUFluid::densityKernel(float distance, float radius) {
-  if (distance < radius) {
-    float scale = 15 / (2 * PI * std::pow(std::abs(radius), 5));
-    float v = radius - distance;
-    return v * v * scale;
-  }
-  return 0;
-}
-
-float ParticleSolverCPUFluid::densityDerivative(float distance, float radius) {
-  if (distance <= radius) {
-    float scale = 15 / (PI * std::pow(std::abs(radius), 5));
-    float v = radius - distance;
-    return -v * scale;
-  }
-  return 0;
-}
-
-float ParticleSolverCPUFluid::nearDensityKernel(float distance, float radius) {
-  if (distance < radius) {
-    float scale = 15 / (PI * std::pow(std::abs(radius), 6));
-    float v = radius - distance;
-    return v * v * v * scale;
-  }
-  return 0;
-}
-
-float ParticleSolverCPUFluid::nearDensityDerivative(float distance, float radius) {
-  if (distance <= radius) {
-    float scale = 45 / (PI * std::pow(std::abs(radius), 6));
-    float v = radius - distance;
-    return -v * v * scale;
-  }
-  return 0;
-}
-
 float ParticleSolverCPUFluid::pressureFromDensity(float density) {
   return (density - targetDensity) * pressureMultiplier;
 }
@@ -99,8 +63,8 @@ void ParticleSolverCPUFluid::computeDensityMap(ParticleSystem *particles, const 
   for (size_t j = 0; j < bucket->getNumParticles(); j++) {
     const unsigned int otherParticleId = bucket->getParticleId(j);
     const float distance_i_j = glm::distance(particles->getPositions()[otherParticleId], particlePosition);
-    density += densityKernel(distance_i_j, smoothingRadius);
-    near_density += nearDensityKernel(distance_i_j, smoothingRadius);
+    density += FluidMath::densityKernel(distance_i_j, smoothingRadius);
+    near_density += FluidMath::nearDensityKernel(distance_i_j, smoothingRadius);
   }
 
   particles->getDensities()[particleID] = glm::vec4(density, near_density, 0.f, 0.f);
@@ -137,8 +101,8 @@ void ParticleSolverCPUFluid::computePressureForce(ParticleSystem *particles, con
         vector_i_j = glm::vec4(0.f, 1.f, 0.f, 0.f);
       }
 
-      pressureForce += vector_i_j * densityDerivative(distance_i_j, smoothingRadius) * sharedPressure / densityNeighbor;
-      pressureForce += vector_i_j * nearDensityDerivative(distance_i_j, smoothingRadius) * sharedNearPressure / nearDensityNeighbor;
+      pressureForce += vector_i_j * FluidMath::densityDerivative(distance_i_j, smoothingRadius) * sharedPressure / densityNeighbor;
+      pressureForce += vector_i_j * FluidMath::nearDensityDerivative(distance_i_j, smoothingRadius) * sharedNearPressure / nearDensityNeighbor;
     }
   }
 
@@ -163,7 +127,6 @@ void ParticleSolverCPUFluid::computeGravityForce(
   }
 
   // Compute the forces with other buckets
-
   Bucket *otherBucket = nullptr;
   for(size_t bucketId = 0; bucketId < this->grid->getTotalBuckets(); bucketId++){
     otherBucket = this->grid->getBucketById(bucketId);

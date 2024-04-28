@@ -1,0 +1,41 @@
+#include <iostream>
+#include <cmath>
+
+#define PI 3.14159265358979323846
+
+class FluidMath {
+    public:
+        static float densityKernel(float distance, float radius) {
+            if (distance < radius) {
+                float scale = 15 / (2 * PI * std::pow(std::abs(radius), 5));
+                float v = radius - distance;
+                return v * v * scale;
+            }
+            return 0;
+        }
+        static float densityDerivative(float distance, float radius) {
+            if (distance <= radius) {
+                float scale = 15 / (PI * std::pow(std::abs(radius), 5));
+                float v = radius - distance;
+                return -v * scale;
+            }
+            return 0;
+        }
+        static float nearDensityKernel(float distance, float radius) {
+            if (distance < radius) {
+                float scale = 15 / (PI * std::pow(std::abs(radius), 6));
+                float v = radius - distance;
+                return v * v * v * scale;
+            }
+            return 0;
+        }
+        static float nearDensityDerivative(float distance, float radius) {
+            if (distance <= radius) {
+                float scale = 45 / (PI * std::pow(std::abs(radius), 6));
+                float v = radius - distance;
+                return -v * v * scale;
+            }
+            return 0;
+        }
+        static float viscosityKernel(float distance, float radius);
+};

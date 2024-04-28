@@ -1,6 +1,7 @@
 
 #include "ParticleSolver.h"
 #include "GridCPU.h"
+#include "FluidMath.h"
 
 #ifndef N_BODY_PARTICLESOLVERCPUFLUID_H
 #define N_BODY_PARTICLESOLVERCPUFLUID_H
