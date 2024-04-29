@@ -25,13 +25,20 @@ out float particleSize;
 
 float getParticleSize(){
     // set the particle size based on the distance from the camera to the particle
-    float particleSize = 4.0f / length(cameraPos - positions[gl_VertexID].xyz);
+    vec3 worldPos = positions[gl_VertexID].xyz;
+    float particleSize = 4.0f / length(cameraPos - worldPos);
+
+    float origin_dist_multiplier = abs(length(worldPos - vec3(2.5f))) * 3.0f;
+    // float origin_dist_multiplier = clamp(
+    //     abs(length(worldPos - vec3(2.5f))),
+    //     0.0f,
+    //     50.0f);
 
     // set the point size based on the particle size
     if(pointSize){
-        return particleSize * worldSize;
+        return particleSize * worldSize * origin_dist_multiplier;
     }
-    return 1;
+    return origin_dist_multiplier;
 }
 
 

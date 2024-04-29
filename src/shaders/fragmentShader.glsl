@@ -39,11 +39,16 @@ vec4 getParticleBrightColor(){
     return vec4(FragColor.rgb, 1.0);
 }
 
+float getAlpha(float dist) {
+    return (0.25f-abs(dist)) * 4.0f / particleSize;
+}
+
 void main()
 {
     // Make GL_POINTS circular
     vec2 pos = gl_PointCoord.xy-0.5;
-    if(dot(pos,pos) > 0.25 && particleSize > 3.0){
+    float dist = dot(pos,pos);
+    if(dist > 0.25 && particleSize > 3.0){
         discard;
     }
 
@@ -52,4 +57,16 @@ void main()
 
     // Render in the second framebuffer the bright particles
     BrightColor = getParticleBrightColor();
+
+    float a;
+    if (dist < 0.00005f) {
+        a = 1.0f;
+    } else {
+        a = getAlpha(dist);
+    }
+
+    FragColor[3] = a;
+    BrightColor[3] = a;
+    // FragColor   = vec4(a);
+    // BrightColor = vec4(a);
 }

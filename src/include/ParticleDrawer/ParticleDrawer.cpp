@@ -53,10 +53,15 @@ void ParticleDrawer::draw(size_t particlesCount) {
 }
 
 void ParticleDrawer::drawNormalScene(size_t particlesCount) {
-    glEnable(GL_DEPTH_TEST);
+    // glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glClearColor(0.f, 0.f, 0.f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glEnable(GL_BLEND);
+    glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+   
+
     this->renderShader->use();
     this->renderShader->setMat4("modelViewProjection", this->camera->getModelViewProjection());
     this->renderShader->setVec3("cameraPos", this->camera->getPosition());
