@@ -6,8 +6,6 @@
 #ifndef N_BODY_PARTICLESOLVERCPUFLUID_H
 #define N_BODY_PARTICLESOLVERCPUFLUID_H
 
-#define PI 3.14159265358979323846
-
 
 class ParticleSolverCPUFluid : public ParticleSolver {
 public:
@@ -33,6 +31,8 @@ protected:
   float nearPressureFromDensity(float density);
 
   void computeDensityMap(ParticleSystem *particles,
+                           const unsigned int particleId);
+  void computeTemperatures(ParticleSystem *particles,
                            const unsigned int particleId);
   void computePressureForce(ParticleSystem *particles,
                            const unsigned int particleId);

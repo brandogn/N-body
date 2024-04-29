@@ -23,6 +23,7 @@ void ParticleSolverCPUFluid::updateParticlePositions(
 
   #pragma omp parallel for schedule(static) shared(particles)
   for(size_t i =  0; i < particles->size(); i++){
+    this->computeTemperatures(particles, i);
     this->computeDensityMap(particles, i);
   }
 
@@ -73,6 +74,17 @@ void ParticleSolverCPUFluid::computeDensityMap(ParticleSystem *particles, const 
   particles->getDensities()[particleID] = glm::vec4(density, near_density, 0.f, 0.f);
 }
 
+void ParticleSolverCPUFluid::computeTemperatures(ParticleSystem *particles, const unsigned int particleId) {
+  glm::vec4 particlePosition = particles->getPositions()[particleId];
+
+  // Get the bucket where the particle is located
+  Bucket* bucket = this->grid->getBucketByPosition(particlePosition);
+
+  for (size_t j = 0; j < bucket->getNumParticles(); j++) {
+    particles->getTemperatures()[particleId].x = FluidMath::computeTemperature(particles->getMasses()[particleId].x, particles->getVelocities()[particleId]);
+  }
+}
+
 void ParticleSolverCPUFluid::computePressureForce(ParticleSystem *particles, const unsigned int particleID) {
   glm::vec4 particlePosition = particles->getPositions()[particleID];
   
@@ -92,7 +104,7 @@ void ParticleSolverCPUFluid::computePressureForce(ParticleSystem *particles, con
       glm::vec4 vector_i_j = particles->getPositions()[otherParticleId] - particlePosition;
       const float distance_i_j = glm::distance(particles->getPositions()[otherParticleId], particlePosition);
 
-      if (distance_i_j < smoothingRadius) {
+      if (distance_i_j <= smoothingRadius) {
         const float densityNeighbor = particles->getDensities()[otherParticleId].x;
         const float nearDensityNeighbor = particles->getDensities()[otherParticleId].y;
         const float neighborPressure = pressureFromDensity(densityNeighbor);

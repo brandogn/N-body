@@ -18,6 +18,7 @@ public:
     glm::vec4* getAccelerations();
     glm::vec4* getMasses();
     glm::vec4* getDensities();
+    glm::vec4* getTemperatures();
     glm::vec4* getForces();
     void setMasses(glm::vec4* newMasses);
     void setPositions(glm::vec4* newPositions);
@@ -33,6 +34,7 @@ protected:
     glm::vec4* velocities;
     glm::vec4* masses;
     glm::vec4* densities;
+    glm::vec4* temperatures;
     glm::vec4* forces;
 
     // Declare ParticleSimulation as a friend class

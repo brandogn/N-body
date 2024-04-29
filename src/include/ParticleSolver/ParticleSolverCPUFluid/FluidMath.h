@@ -2,6 +2,7 @@
 #include <cmath>
 
 #define PI 3.14159265358979323846
+#define BOLTZMANN 1.38e-23
 
 class FluidMath {
     public:
@@ -44,5 +45,9 @@ class FluidMath {
                 return v * v * v;
             }
             return 0;
+        }
+        static float computeTemperature(float mass, glm::vec4 velocity) {
+            float squaredVelocity = velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z;
+            return ((2 * squaredVelocity) / (3 * BOLTZMANN * mass));
         }
 };
