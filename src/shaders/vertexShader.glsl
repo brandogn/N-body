@@ -36,11 +36,7 @@ float getParticleSize(){
     vec3 worldPos = positions[gl_VertexID].xyz;
     float particleSize = 4.0f / length(cameraPos - worldPos);
 
-    float origin_dist_multiplier = abs(length(worldPos - vec3(2.5f))) * 3.0f;
-    // float origin_dist_multiplier = clamp(
-    //     abs(length(worldPos - vec3(2.5f))),
-    //     0.0f,
-    //     50.0f);
+    float origin_dist_multiplier = max(1.0f, abs(length(worldPos - vec3(2.5f))) * 3.0f);
 
     // set the point size based on the particle size
     if(pointSize){
