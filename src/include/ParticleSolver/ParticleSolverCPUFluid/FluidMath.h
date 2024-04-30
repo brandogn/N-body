@@ -46,8 +46,7 @@ class FluidMath {
             }
             return 0;
         }
-        static float computeTemperature(float mass, glm::vec4 velocity) {
-            float squaredVelocity = velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z;
-            return ((2 * squaredVelocity) / (3 * BOLTZMANN * mass));
+        static float computeTemperature(float mass, float velocity) {
+            return ((2 * velocity * velocity) / (3 * BOLTZMANN * mass));
         }
 };

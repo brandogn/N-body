@@ -95,7 +95,7 @@ void ParticleSolverCPUFluid::computeTemperatures(ParticleSystem *particles, cons
   Bucket* bucket = this->grid->getBucketByPosition(particlePosition);
 
   for (size_t j = 0; j < bucket->getNumParticles(); j++) {
-    particles->getTemperatures()[particleId].x = FluidMath::computeTemperature(particles->getMasses()[particleId].x, particles->getVelocities()[particleId]);
+    particles->getTemperatures()[particleId].x = FluidMath::computeTemperature(particles->getMasses()[particleId].x, particles->getVelocities()[particleId].x);
   }
 }
 

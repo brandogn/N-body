@@ -50,7 +50,7 @@ float getParticleSize(){
 }
 
 float calcTemp() {
-    float squaredVelocity = dot(velocities[gl_VertexID], velocities[gl_VertexID]);
+    float squaredVelocity = velocities[gl_VertexID].x * velocities[gl_VertexID].x;
     return ((2 * squaredVelocity) / (3 * 1.38e-23 * masses[gl_VertexID].x));
 }
 
