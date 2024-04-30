@@ -45,6 +45,20 @@ void ParticleSolverCPUFluid::updateParticlePositions(
   }
 }
 
+// void ParticleSolverCPUFluid::initializeShockWave(ParticleSystem *particles) {
+//     float shockRadius = 0.5f; // Radius from center to differentiate between the inner and outer layers
+//     float shockStrength = 100.0f; // Initial outward velocity for outer particles
+
+//     for (size_t i = 0; i < particles->size(); i++) {
+//         glm::vec4 particlePosition = particles->getPositions()[i];
+//         float distanceToCenter = glm::length(particlePosition - glm::vec4(0.f));
+//         if (distanceToCenter > shockRadius) {
+//             glm::vec4 direction = glm::normalize(particlePosition - glm::vec4(0.f));
+//             particles->getVelocities()[i] += direction * shockStrength; // Impart initial outward velocity
+//         }
+//     }
+// }
+
 float ParticleSolverCPUFluid::pressureFromDensity(float density) {
   return (density - targetDensity) * pressureMultiplier;
 }
@@ -86,6 +100,51 @@ void ParticleSolverCPUFluid::computeTemperatures(ParticleSystem *particles, cons
 }
 
 void ParticleSolverCPUFluid::computePressureForce(ParticleSystem *particles, const unsigned int particleID) {
+
+  /*
+  glm::vec4 particlePosition = particles->getPositions()[particleID];
+  Bucket* bucket = this->grid->getBucketByPosition(particlePosition);
+
+
+  float distanceToCenter = glm::length(particlePosition - glm::vec4(0.f)); // is center of the sim at origin?
+  const float thresholdRadius = 0.5f; // adjust this after running, whatever looks more right - 0.5 is default
+  float explosionPressureMultiplier = (distanceToCenter > thresholdRadius) ? 10.0f : 1.0f;
+
+  const float density = particles->getDensities()[particleID].x;
+  const float pressure = explosionPressureMultiplier * pressureFromDensity(density);
+  glm::vec4 pressureForce(0.f);
+
+  
+  for (size_t j = 0; j < bucket->getNumParticles(); j++) {
+    const unsigned int otherParticleId = bucket->getParticleId(j);
+    if (otherParticleId != particleID) {
+      glm::vec4 vector_i_j = particles->getPositions()[otherParticleId] - particlePosition;
+      const float distance_i_j = glm::distance(particles->getPositions()[otherParticleId], particlePosition);
+
+      if (distance_i_j < smoothingRadius) {
+        const float densityNeighbor = particles->getDensities()[otherParticleId].x;
+        const float nearDensityNeighbor = particles->getDensities()[otherParticleId].y;
+        const float neighborPressure = pressureFromDensity(densityNeighbor);
+        const float neighborNearPressure = nearPressureFromDensity(nearDensityNeighbor);
+
+        const float sharedPressure = (pressure + neighborPressure) / 2;
+        const float sharedNearPressure = (nearPressure + neighborNearPressure) / 2;
+
+        if (distance_i_j <= 0) {
+          vector_i_j = glm::vec4(0.f, 1.f, 0.f, 0.f);
+        }
+
+        pressureForce += vector_i_j * FluidMath::densityDerivative(distance_i_j, smoothingRadius) * sharedPressure / densityNeighbor;
+        pressureForce += vector_i_j * FluidMath::nearDensityDerivative(distance_i_j, smoothingRadius) * sharedNearPressure / nearDensityNeighbor;
+      }
+    }
+  }
+
+  glm::vec4 acceleration = pressureForce / density;
+  particles->getVelocities()[particleID] += acceleration * this->timeStep;
+  */
+
+
   glm::vec4 particlePosition = particles->getPositions()[particleID];
   
   // Get the bucket where the particle is located
@@ -153,6 +212,69 @@ void ParticleSolverCPUFluid::computeViscosityForce(ParticleSystem *particles, co
 
 void ParticleSolverCPUFluid::computeGravityForce(
     ParticleSystem *particles, const unsigned int particleId) {
+
+
+  /*
+  glm::vec4 particlePosition = particles->getPositions()[particleId];
+  glm::vec4 centerOfMass(0.f, 0.f, 0.f, 0.f); // again assuming center of mass at origin
+
+  float distanceToCenter = glm::length(particlePosition - centerOfMass);
+  float collapseThresholdRadius = 0.5f; // adjust if necessary
+
+  // gravitational constants for normal and 'enhanced' gravitational pull near center
+  float normalGravitationalStrength = G;
+  float enhancedGravitationalStrength = G * 10.0f; // stronger gravitational pull within the collapse threshold, again can adjust this
+
+  float gravitationalStrength = (distanceToCenter <= collapseThresholdRadius) ? enhancedGravitationalStrength : normalGravitationalStrength;
+
+  glm::vec4 gravityDirection = glm::normalize(centerOfMass - particlePosition);
+  glm::vec4 gravityForce = gravityDirection * gravitationalStrength * particles->getMasses()[particleId];
+
+  // apply central gravity force towards the simulation center
+  particles->getForces()[particleId] += gravityForce;
+
+  // tried to follow same format as u guys for rest of this
+  Bucket* bucket = this->grid->getBucketByPosition(particlePosition);
+    
+  // inside bucket
+  for(size_t j = 0; j < bucket->getNumParticles(); j++){
+      const unsigned int otherParticleId = bucket->getParticleId(j);
+      if (otherParticleId != particleId) {
+          glm::vec4 otherParticlePosition = particles->getPositions()[otherParticleId];
+          glm::vec4 vector_i_j = otherParticlePosition - particlePosition;
+          float distance_i_j = glm::length(vector_i_j);
+
+          if (distance_i_j > 0) {
+              float forceMagnitude = (normalGravitationalStrength * particles->getMasses()[particleId] * particles->getMasses()[otherParticleId]) /
+                                       (distance_i_j * distance_i_j + this->squaredSoftening);
+              glm::vec4 forceVector = glm::normalize(vector_i_j) * forceMagnitude;
+              particles->getForces()[particleId] -= forceVector;
+              particles->getForces()[otherParticleId] += forceVector;
+          }
+      }
+  }
+
+  // other buckets
+  for(size_t bucketId = 0; bucketId < this->grid->getTotalBuckets(); bucketId++){
+      Bucket *otherBucket = this->grid->getBucketById(bucketId);
+      if (bucket->getBucketId() != otherBucket->getBucketId()){
+          for(size_t k = 0; k < otherBucket->getNumParticles(); k++) {
+              unsigned int otherParticleId = otherBucket->getParticleId(k);
+              glm::vec4 otherParticlePosition = particles->getPositions()[otherParticleId];
+              glm::vec4 vector_i_j = otherParticlePosition - particlePosition;
+              float distance_i_j = glm::length(vector_i_j);
+
+              if (distance_i_j > 0) {
+                  float forceMagnitude = (normalGravitationalStrength * particles->getMasses()[particleId] * particles->getMasses()[otherParticleId]) /
+                                           (distance_i_j * distance_i_j + this->squaredSoftening);
+                  glm::vec4 forceVector = glm::normalize(vector_i_j) * forceMagnitude;
+                  particles->getForces()[particleId] -= forceVector;
+                  particles->getForces()[otherParticleId] += forceVector;
+              }
+          }
+      }
+  }
+  */
 
   glm::vec4 particlePosition = particles->getPositions()[particleId];
   glm::vec4 totalForce (0.f);
