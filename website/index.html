@@ -1,0 +1,423 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    background-color: white;
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+  kbd {
+    color: #121212;
+  }
+</style>
+<title>CS 184 Cloth Sim</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+
+<script>
+  MathJax = {
+    tex: {
+      inlineMath: [['$', '$'], ['\\(', '\\)']]
+    }
+  };
+</script>
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js">
+</script>
+
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2024</h1>
+<h1 align="middle">Final Project</h1>
+<h2 align="middle">Snehaa Ganesh Kumar, Manan Bhargava, Nak Vong, Brandon Wong</h2>
+
+<!-- Add Website URL -->
+<h2 align="middle"><a href="https://cal-cs184-student.github.io/hw-webpages-sp24-snehaagk/hw4/index.html">Website URL</a></h2>
+
+<br>
+
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="images/title_pic.png" align="middle" width="400px"/>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<br>
+
+<h2 align="middle">Overview</h2>
+<p>
+  In this project, we began with implementing the point mass and spring simulation. We developed a grid of masses and springs to create the initial cloth that would illustrate the structural, shearing, and bending forces. We then moved on to developing the simulation for pinning 2 and 4 corners of the cloth, and illustrating how the cloth was dropped from its initial starting position. Through this, we were able to visualize the various forces at play when gravity is applied to all the point masses and springs, and the forces that are distributed and acted upon between the point masses and springs. It was incredible to see the cloth gracefully drop from the two corners of being pinned downwards with gravity applied. Then, looking at handling the case where the cloth is having a collision with a sphere illustrates the unique geometry present when draping the cloth over a spherical object, which looks extremely realistic to the real version of a cloth being draped on a spherical object. Analyzing different densities of cloths and the strength of springs illustrated the effect of the tensile force of the material, and how this also ties into the cloth folding on top of itself when self-colliding. Finally, implementing shaders illustrated the effects of various types of shading, and the underlying equations behind various aspects of light hitting the material or the texture mapping of the material — specifically with phong shading illustrating the ambient, diffuse, and specular lighting. 
+</p>
+<p> Overall, this project was incredibly rewarding for serving as an illustration of physics in the real-world, applied through a simulation and demonstrating the forces as well as the lighting in shading. Debugging was challenging in ClothSim, specifically through the implementation of various mathematical formulas. This translated into the coding process creating a binary scenario where the intended properties or effects in the simulation either don’t work, or work immediately. Specifically for shading, understanding the visual aspects of various types of shading with the cloth and sphere was incredibly cool. </p>
+<br>
+
+<h2 align="middle">Part 1: Masses and Springs (20 Points)</h2>
+<!-- Walk through the ray generation and primitive intersection parts of the rendering pipeline.
+Explain the triangle intersection algorithm you implemented in your own words.
+Show images with normal shading for a few small .dae files. -->
+
+<h3>
+  Take some screenshots of scene/pinned 2.json from a viewing angle where you can clearly see the cloth wireframe to show the structure of your point masses and springs.
+</h3>
+<!-- Example of including multiple figures -->
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="images/p1-angle.png" align="middle" width="400px"/>
+        <!--figcaption>Pixel Sample: CBEmpty.dae</figcaption-->
+      </td>
+      <td>
+        <img src="images/p1-2.png" align="middle" width="400px"/>
+        <!--figcaption>Pixel Sample: banana.dae</figcaption-->
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+<br>
+<br>
+
+<h2 align="middle">Part 2: Simulation via Numerical Integration (20 Points)</h2>
+
+<h3> Impact of Ks on Cloth Behavior: </h3>
+<p> Higher ks (Spring Stiffness): When the spring stiffness coefficient (ks) is increased, the springs within the cloth simulation become more resistant to deformation. This results in a cloth that appears stiffer and less prone to bending, since the pinned cloth is illustrated with less “droopiness”. The increased stiffness gives a more rigid and extended appearance. </p>
+<p> Lower ks (Spring Stiffness): Conversely, decreasing the spring stiffness coefficient (ks) makes the springs more elastic and flexible. This elasticity allows the cloth to bend and fold more readily, leading to a cloth simulation characterized by increased creases and a looser look from having 2 corners pinned. </p>
+
+
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 ks/50.png" align="middle" width="200px"/>
+        <figcaption>ks = 50 N/m</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 ks/500.png" align="middle" width="200px"/>
+        <figcaption>ks = 500 N/m</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 ks/5000.png" align="middle" width="200px"/>
+        <figcaption>ks = 5,000 N/m</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 ks/50000.png" align="middle" width="200px"/>
+        <figcaption>ks = 50,000 N/m</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<h3> Impact of Density on Cloth Behavior: </h3>
+<p> Lowering Density: When the density of the cloth is decreased, the overall mass of the cloth becomes lighter. Since the force of gravity acting on an object is directly proportional to its mass (F = m * g, where F is the force due to gravity, m is mass, and g is the acceleration due to gravity), a decrease in mass results in a decrease in the gravitational force applied to the cloth. Consequently, the cloth experiences a gentler pull towards the ground, leading to a slower "falling" motion. This can simulate lighter materials or cloths under less gravitational influence. </p>
+<p> Raising Density: Conversely, increasing the cloth's density makes it heavier. The increased mass leads to a stronger gravitational pull on the cloth, causing it to fall faster. This behavior is consistent with heavier fabrics or scenarios where the cloth is subjected to stronger gravitational forces, making it more quickly succumb to gravity. </p>
+
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 density/2.png" align="middle" width="200px"/>
+        <figcaption>density = 2 g/cm^2</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 density/5.png" align="middle" width="200px"/>
+        <figcaption>density = 5 g/cm^2</figcaption>
+      </td>
+
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 density/10.png" align="middle" width="200px"/>
+        <figcaption>density = 10 g/cm^2</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 2//pinned2 density/15.png" align="middle" width="200px"/>
+        <figcaption>density = 15 g/cm^2</figcaption>
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 density/15.png" align="middle" width="200px"/>
+        <figcaption>density = 15 g/cm^2</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 density/30.png" align="middle" width="200px"/>
+        <figcaption>density = 30 g/cm^2</figcaption>
+      </td>
+
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 density/100.png" align="middle" width="200px"/>
+        <figcaption>density = 100 g/cm^2</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 2//pinned2 density/10000.png" align="middle" width="200px"/>
+        <figcaption>density = 10,000 g/cm^2</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<h3> Impact of Damping on Cloth Behavior: </h3>
+<p> Lowering Damping Factor: The damping factor in a simulation acts to reduce the velocity of the cloth over time, simulating the effects of air resistance and internal friction. Lowering the damping factor reduces the effect of this velocity reduction, allowing the cloth to maintain its speed for longer. As a result, with a lower damping factor, the cloth falls faster from its initial state, as less energy is lost to damping forces. This can simulate conditions with less air resistance or internal material friction. This is shown through the calculation of the velocity, Vector3D velocity = (1 - d) * (pm.position - pm.last_position) with the relationship of how adjusting the value of d affects the velocity. </p>
+<p> Raising Damping Factor: Increasing the damping factor enhances the velocity reduction effect, causing the cloth to lose speed more rapidly. This leads to a slower, more graceful descent, as if the cloth is falling through a medium with greater resistance (e.g., thicker air) or as if the material itself has higher internal friction. The increased damping makes the cloth's movement appear more fluid and natural, especially in environments where air resistance plays a significant role. </p>
+
+
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 damping/0_damping.gif" align="middle" width="200px"/>
+        <figcaption>damping = 0%</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 damping/0.2_damping_default.gif" align="middle" width="200px"/>
+        <figcaption>damping = 0.2%</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 damping/0.5_damping.gif" align="middle" width="200px"/>
+        <figcaption>damping = 0.5%</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 2/pinned2 damping/1_damping.gif" align="middle" width="200px"/>
+        <figcaption>damping = 1%</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 2/default shading/pinned2_bump.png" align="middle" width="400px"/>
+        <figcaption>Shaded Pinned 2 Cloth, Default Parameters</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 2/default shading/pinned4_bump.png" align="middle" width="400px"/>
+        <figcaption>Shaded Pinned 4 Cloth, Default Parameters</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<p> The adjustments to the density and damping factor directly influence the calculation of the cloth's new position (Vector3D new_position = pm.position + velocity + (acceleration * delta_t_squared)). By altering the velocity and acceleration applied to each point mass within the cloth, these parameters modify the cloth's trajectory and behavior under gravity. This results in a dynamic simulation that can be fine-tuned to replicate a wide range of physical conditions and material properties, allowing for realistic animation of cloth behavior in virtual environments. </p>
+
+<h2 align="middle">Part 3: Handling Collisions with Other Objects (20 Points)</h2>
+
+<h3> We implemented the collision with other objects in the following process for the sphere collide method: </h3>
+<p> 1. Direction Calculation: The function starts by calculating the vector (direction) from the sphere's origin to the point mass's current position. </p>
+<p> 2. Inside Sphere Check: Use the direction vector to calculate whether the point mass is inside the sphere. This is done by comparing the squared magnitude of the direction vector (direction.norm2()) with the squared radius of the sphere (this->radius2). Using squared values avoids the computational cost of a square root operation. </p>
+<p> 3. If there is a collision, then calculate the tangent point, calculate the correction vector based on the tangent point and the point mass’s last position, apply the friction to the correction vector, and update the point mass position to the sum of the last position and the correction vector. </p>
+<p> We implemented the collision with other objects in the following process for the plane collision method with a similar approach. </p>
+<br>
+<h3> We implemented the collision with other objects in cloth.cpp in the simulate function through: </h3>
+<p> Nested iteration for each point mass in point masses, for each collision object in the list of collision objects. </p>
+<p> In the nested iteration, run the collide method of the object on the point mass. This ensures that the collision with respect to whichever object geometry, whether it is the sphere or plane, is applied to each point mass correctly for all collision objects for all point masses. </p>
+
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 3/500.gif" align="middle" width="266px"/>
+        <figcaption>ks = 500 N/m</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 3/5000.gif" align="middle" width="266px"/>
+        <figcaption>ks = 5000 N/m</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 3/50000.gif" align="middle" width="266px"/>
+        <figcaption>ks = 50000 N/m</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<h3> Impact of Ks on Cloth Behavior </h3>
+<p> Higher ks (Spring Stiffness): When the spring stiffness coefficient (ks) is increased, the springs within the cloth simulation become more resistant to deformation. This results in a cloth that appears stiffer and less prone to bending, manifesting in fewer creases and a broader drape over objects. The increased stiffness prevents the cloth from closely conforming to underlying shapes, giving it a more rigid and extended appearance. </p>
+<p> Lower ks (Spring Stiffness): Conversely, decreasing the spring stiffness coefficient (ks) makes the springs more elastic and flexible. This elasticity allows the cloth to bend and fold more readily, leading to a cloth simulation characterized by increased creases and a tighter drape over objects. The decreased stiffness enables the cloth to more accurately and closely follow the contours of underlying shapes, resulting in a more detailed and realistic simulation of cloth behavior. </p>
+
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 3/plane.png" align="middle" width="400px"/>
+        <figcaption>Our Shaded Cloth, Peacefully at Rest</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<h2 align="middle">Part 4: Handling Self-Collisions (20 Points)</h2>
+
+<h3> Varying Density of Cloth </h3>
+<p> Lower Density: At reduced density levels, the cloth exhibits a more graceful and slower descent. The reduced mass results in weaker gravitational pull, allowing the cloth to float and drape with minimal folding. This behavior mimics lightweight fabrics that tend to spread out and settle gently, showing fewer tendencies to fold significantly upon themselves. </p>
+<p> Higher Density: As the density increases, the cloth's behavior markedly changes. It falls more swiftly due to the increased gravitational force acting on the greater mass. This rapid descent leads to more pronounced interactions with itself and any obstacles, resulting in more frequent and tighter folds. The cloth, behaving akin to heavier fabric, gathers and folds upon itself, creating complex folding patterns as it settles. </p>
+
+<h3> Varying Ks of Cloth </h3>
+<p> Lower ks: Decreasing the spring constant effectively reduces the stiffness of the cloth, making it more susceptible to bending and crumpling. In this state, the cloth exhibits a pronounced tendency to fold upon itself, especially when encountering external forces or obstacles. The reduced resistance to deformation allows the cloth to crumple more readily, leading to a faster accumulation of folds and a more compact final state. This behavior is reminiscent of softer, more pliable fabrics that easily drape and conform to the shapes beneath them. </p>
+<p> Higher ks: Increasing the spring constant introduces a higher degree of stiffness to the cloth, resisting bending and maintaining a more uniform structure during its descent. The enhanced rigidity prevents the cloth from easily folding upon itself, leading to a smoother and more controlled fall. Even as the cloth settles, it retains a more open and spread-out configuration, with fewer and less pronounced folds. This mimics the behavior of stiffer fabrics that hold their shape and resist crumpling. </p>
+
+
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 4/100_density_1.png" align="middle" width="266px"/>
+        <figcaption>Density = 100, Initial State</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 4/100_density_2.png" align="middle" width="266px"/>
+        <figcaption>Density = 100, After Collapse</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 4/100_density_3.png" align="middle" width="266px"/>
+        <figcaption>Density = 100, Final State</figcaption>
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 4/2_density.gif" align="middle" width="266px"/>
+        <figcaption>Density = 2 g/cm^2</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 4/15_density.gif" align="middle" width="266px"/>
+        <figcaption>Density = 15 g/cm^2</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 4/100_density.gif" align="middle" width="266px"/>
+        <figcaption>Density = 100 g/cm^2</figcaption>
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 4/100_ks.gif" align="middle" width="266px"/>
+        <figcaption>ks = 100 N/m</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 4/500_ks.gif" align="middle" width="266px"/>
+        <figcaption>ks = 500 N/m</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 4/50000_ks.gif" align="middle" width="266px"/>
+        <figcaption>ks = 50,000 N/m</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<h2 align="middle">Part 5: Shaders (20 Points)</h2>
+
+<h3>Explain in your own words what a shader program is and how vertex and fragment shaders work together to create lighting and material effects.</h3>
+<p> A shader program is a set of instructions that dictate how graphics are rendered on the screen, particularly how vertices and pixels (fragments) should be processed. The vertex shader manages the shape and position of objects, transforming 3D coordinates to 2D coordinates, while applying calculations for lighting effects that are consistent across a surface. The fragment shader, on the other hand, controls the pixel-level details, such as color, texture, and lighting, to create the final visual effects you see on each pixel of an object. </p>
+<br>
+
+<h3>Explain the Blinn-Phong shading model in your own words.</h3>
+<p>The Blinn-Phong shading model is an enhancement to the Phong shading model. It simplifies the way light reflects on surfaces, making it computationally less intensive. This model calculates the light reflection by using the halfway vector between the viewer's line of sight and the light source's direction, instead of the reflection vector used in Phong shading. This allows for a more realistic portrayal of light on shiny surfaces while reducing the processing power needed to render the scene. </p>
+<br>
+
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 5/p5-ambient.png" align="middle" width="200px"/>
+        <figcaption>Blinn-Phong, Ambient Component</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 5/p5-diffuse.png" align="middle" width="200px"/>
+        <figcaption>Blinn-Phong, Diffuse Component</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 5/p5-specular.png" align="middle" width="200px"/>
+        <figcaption>Blinn-Phong, Specular Component</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 5/p5-phong.png" align="middle" width="200px"/>
+        <figcaption>Blinn-Phong, All Components</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 5/p5-texture.png" align="middle" width="500px"/>
+        <figcaption>Custom Texture</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<p>When analyzing the effect of shader coarseness on bump and displacement mapping, it's evident that a higher sample density allows for more accurate and detailed rendering. With a low sample density, as in the 16x16 example shown below, displacement mapping can't capture the fine details present in the texture, leading to a blocky and distorted appearance. However, as the sample density increases to 128x128, displacement mapping becomes effective at reproducing the high-frequency details, providing a textured appearance that aligns with the visual cues from the texture map itself.</p>
+
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 5/p5-bump-16.png" align="middle" width="400px"/>
+        <figcaption>Bump Map - 16x16</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 5/p5-displacement-16.png" align="middle" width="400px"/>
+        <figcaption>Displacement Map - 16x16</figcaption>
+      </td>
+    </tr>
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 5/p5-bump-128.png" align="middle" width="400px"/>
+        <figcaption>Bump Map - 128x128</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 5/p5-displacement-128.png" align="middle" width="400px"/>
+        <figcaption>Displacement Map - 128x128</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+<div align="middle">
+  <table style="width:100%">
+    <tr align="center">
+      <td>
+        <img src="images/cs184 hw4 part 5/p5-mirror-sphere.png" align="middle" width="400px"/>
+        <figcaption>Mirror Shader Initial State</figcaption>
+      </td>
+      <td>
+        <img src="images/cs184 hw4 part 5/p5-mirror.png" align="middle" width="400px"/>
+        <figcaption>Mirror Shader Collision</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+<br>
+
+
+
+</body>
+</html>
