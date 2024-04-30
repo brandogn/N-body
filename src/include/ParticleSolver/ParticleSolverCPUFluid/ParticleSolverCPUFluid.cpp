@@ -304,7 +304,7 @@ void ParticleSolverCPUFluid::computeGravityForce(
     }
   }
 
-  particles->getForces()[particleId] += totalForce;
+  particles->getForces()[particleId] = totalForce;
 }
 
 bool ParticleSolverCPUFluid::usesGPU() { return false; }

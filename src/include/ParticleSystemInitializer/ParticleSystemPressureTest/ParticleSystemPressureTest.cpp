@@ -11,7 +11,7 @@ ParticleSystem* ParticleSystemPressureTest::generateParticles(glm::vec3 worldDim
     float length = glm::length(worldDimensions) / 20.f;
 
     // Determine radius of sphere based on world dimensions
-    float radius = glm::length(worldDimensions) / 3.0f;
+    float radius = glm::length(worldDimensions) / 5.0f;
 
     // Determine particle mass based on world volume and total particles
     float worldVolume = worldDimensions.x * worldDimensions.y * worldDimensions.z;
@@ -22,7 +22,7 @@ ParticleSystem* ParticleSystemPressureTest::generateParticles(glm::vec3 worldDim
     int numCoreParticles = totalParticles * coreRatio;
 
     float shockRadius = radius * coreRatio; // Radius from center to differentiate between the inner and outer layers
-    float shockStrength = 200.0f; // Initial outward velocity for outer particles
+    float shockStrength = -250.0f; // Initial outward velocity for outer particles
 
     for (int i = 0; i < numCoreParticles; ++i) {
         glm::vec3 position = glm::ballRand(radius * coreRatio);
