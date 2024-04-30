@@ -80,7 +80,7 @@ void ParticleSimulation::configureGpuBuffers() {
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * this->particleSystem->size(), this->particleSystem->getAccelerations(), GL_DYNAMIC_DRAW);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->masses_SSBO);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * this->particleSystem->size(), this->particleSystem->getMasses(), GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * this->particleSystem->size(), this->particleSystem->getTemperatures(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->forces_SSBO);
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * this->particleSystem->size(), this->particleSystem->getForces(), GL_DYNAMIC_DRAW);
@@ -109,6 +109,12 @@ void ParticleSimulation::configureCpuBuffers() {
     this->particleSystem->setAccelerations(accelerations);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->masses_SSBO);
+    glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(glm::vec4) * this->particleSystem->size(), this->particleSystem->getTemperatures(), bufferStorageFlags);
+    glm::vec4* masses = (glm::vec4*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(glm::vec4) * this->particleSystem->size(), bufferStorageFlags);
+    this->particleSystem->setTemperatures(masses);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
 
@@ -171,6 +177,16 @@ void ParticleSimulation::updateGPUParticleSystem() {
         std::copy(accelerations, accelerations + numParticles, copiedAccelerations);
         this->particleSystem->setAccelerations(copiedAccelerations);
         // Unmap the acceleration SSBO
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+        // Bind the masses SSBO
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->masses_SSBO);
+        // Map the masses SSBO memory to CPU-accessible memory
+        glm::vec4* masses = static_cast<glm::vec4*>(glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY));
+        glm::vec4* copiedMasses = new glm::vec4[numParticles];
+        std::copy(masses, masses + numParticles, copiedMasses);
+        this->particleSystem->setTemperatures(copiedMasses);
+        // Unmap the masses SSBO
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
         // Unbind the shader storage buffers

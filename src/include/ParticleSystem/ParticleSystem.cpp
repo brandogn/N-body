@@ -122,6 +122,11 @@ void ParticleSystem::setVelocities(glm::vec4 *newVelocities) {
     this->velocities = newVelocities;
 }
 
+void ParticleSystem::setTemperatures(glm::vec4 *newTemps) {
+    delete [] this->temperatures;
+    this->temperatures = newTemps;
+}
+
 std::ostream& operator<<(std::ostream& os, const ParticleSystem& system) {
     os << "Particle System with " << system.numParticles << " particles:" << std::endl;
     for (unsigned int i = 0; i < system.numParticles; ++i) {

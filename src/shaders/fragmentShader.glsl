@@ -44,14 +44,28 @@ vec4 getParticleColor(){
 
     
     // Define a maximum temp value
-    float maxtemp = 100000000.0f;
+    // float maxtemp = 100000000.0f;
 
-    // Compute a normalized temp value between 0 and 1
-    float normalizedtemp = clamp(temp / maxtemp, 0.0, 1.0);
+    // // Compute a normalized temp value between 0 and 1
+    // float normalizedtemp = clamp(temp / maxtemp, 0.0, 1.0);
+
+
+    float minTemp = 5.0e+23;
+    float maxTemp = 9.0e+28;
+
+    // float normalizedtemp = clamp((temp - minTemp) / maxTemp, 0.7, 0.9);
+
+    float normalizedtemp;
+    // if (temp >= 9.0e+28) {
+    //     normalizedtemp = 0.6;
+    // } else {
+    //     normalizedtemp = 1.0;
+
+    // }
+     normalizedtemp = clamp((temp - minTemp) / maxTemp, 0.0, 0.66);
+    //  normalizedtemp = 0.66f;
 
     vec3 hsv = vec3(normalizedtemp, 1.0f, normalizedVelocity);
-
-
     return vec4(hsv2rgb(hsv), 1.0f);
 }
 

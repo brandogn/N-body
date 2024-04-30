@@ -16,7 +16,7 @@ ParticleDrawer::ParticleDrawer(glm::vec3 worldDim, glm::vec2 windowDim) {
     this->renderShader = new VertexFragmentShader("../src/shaders/vertexShader.glsl", "../src/shaders/fragmentShader.glsl");
     this->renderShader->use();
     this->renderShader->setFloat("worldSize", glm::length(worldDim));
-    this->pointSize = false;
+    this->pointSize = true;
 
 
     this->finalRenderShader = new VertexFragmentShader("../src/shaders/finalRender_vs.glsl", "../src/shaders/finalRender_fs.glsl");

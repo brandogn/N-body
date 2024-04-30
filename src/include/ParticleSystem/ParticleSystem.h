@@ -24,6 +24,7 @@ public:
     void setPositions(glm::vec4* newPositions);
     void setAccelerations(glm::vec4* newAccelerations);
     void setVelocities(glm::vec4* newVelocities);
+    void setTemperatures(glm::vec4* newTemps);
     friend std::ostream& operator<<(std::ostream& os, const ParticleSystem& system);
 
 protected:

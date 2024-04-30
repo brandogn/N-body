@@ -92,11 +92,12 @@ void ParticleSolverCPUFluid::computeTemperatures(ParticleSystem *particles, cons
   glm::vec4 particlePosition = particles->getPositions()[particleId];
 
   // Get the bucket where the particle is located
-  Bucket* bucket = this->grid->getBucketByPosition(particlePosition);
+  // Bucket* bucket = this->grid->getBucketByPosition(particlePosition);
 
-  for (size_t j = 0; j < bucket->getNumParticles(); j++) {
+  // for (size_t j = 0; j < bucket->getNumParticles(); j++) {
     particles->getTemperatures()[particleId].x = FluidMath::computeTemperature(particles->getMasses()[particleId].x, particles->getVelocities()[particleId].x);
-  }
+  // }
+  // std::cout << particles->getTemperatures()[particleId].x << "\n";
 }
 
 void ParticleSolverCPUFluid::computePressureForce(ParticleSystem *particles, const unsigned int particleID) {
