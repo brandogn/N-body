@@ -15,6 +15,7 @@
 - [Available versions](#available-versions)  
 - [Available initializations](#available-initializations)  
 - [Program structure](#program-structure)
+- [Supernova (bottom)](#Supernova)
 
 ## About this project  
 This project was made to learn `C++`, `OpenGL` and `GPU programming`.
@@ -199,6 +200,11 @@ An example of how a new simulation version can be added is by creating a new cla
 Similarly, to add a new initialization, a new class that implements the `ParticleSystemInitializer` interface can be created and the new option can be added to the list of initialization options in the `ArgumentsParser` class.   
 
 Finally, you would have to use the new initalization or version you created in `main.cpp`.
+
+
+## Run a Supernova
+
+Run with `-v 6 -i 7`, recommended with 2500-5000 particles.
 
 
 
